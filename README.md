@@ -1,4 +1,4 @@
-# Kokuban 内核 for 小米 17 系列
+# Bahlil 内核 for 小米 17 系列
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/YuzakiKokuban/Kokuban_Kernel_CI_Center/main/docs/kokuban_logo.png" alt="Logo" width="150">
@@ -16,7 +16,7 @@
 * **性能优化**：提供面向日常使用与游戏场景的调度与性能调优。
 * **精简发行模式**：围绕 `LKM` 与 `ReSukiSU` 两种模式持续维护，减少历史分支带来的维护复杂度。
 * **扩展特性支持**：可按构建配置集成 `SuSFS`、`BBG`、`Re-Kernel` 与 `zram` LZ4 NEON 支持，其中 `SuSFS` 仅在 `ReSukiSU` 构建中启用。
-* **版本标识**：`-android16-Kokuban-SilverWolf`
+* **版本标识**：`-android16-Bahlil-SilverWolf`
 
 ## 发行版本说明
 
@@ -53,7 +53,7 @@
 
 
 
-# Kokuban Kernel for Xiaomi 17 Series
+# Bahlil Kernel for Xiaomi 17 Series
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/YuzakiKokuban/Kokuban_Kernel_CI_Center/main/docs/kokuban_logo.png" alt="Logo" width="150">
@@ -71,7 +71,7 @@ This is a custom kernel project for the **Xiaomi 17 Series**, built with a focus
 * **Performance Tuned**: Includes targeted scheduling and performance optimizations for smoother daily use and gaming.
 * **Streamlined Release Model**: Focuses on the actively maintained `LKM` and `ReSukiSU` variants to keep maintenance predictable and transparent.
 * **Optional Feature Integration**: Matching builds may include `SuSFS`, `BBG`, `Re-Kernel`, and `zram` LZ4 NEON support, with `SuSFS` enabled only on `ReSukiSU` releases.
-* **Version Identifier**: `-android16-Kokuban-SilverWolf`
+* **Version Identifier**: `-android16-Bahlil-SilverWolf`
 
 ## Release Variants
 
