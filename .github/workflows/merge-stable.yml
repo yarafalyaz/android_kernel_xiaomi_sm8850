@@ -58,12 +58,14 @@ jobs:
       - name: Report conflict count
         if: steps.check.outputs.done == 'no'
         run: |
+          set +e
           BASE=$(git merge-base HEAD "v${{ steps.version.outputs.target }}")
-          CONFLICTS=$(git merge-tree "$BASE" HEAD "v${{ steps.version.outputs.target }}" 2>/dev/null | grep -c "^<<<<<<<" || echo 0)
-          echo "Conflicts expected: $CONFLICTS"
+          CONFLICTS=$(git merge-tree "$BASE" HEAD "v${{ steps.version.outputs.target }}" 2>/dev/null | grep -c "^<<<<<<<")
+          echo "Conflicts expected: ${CONFLICTS:-0}"
           echo "## Pre-merge conflict check" >> $GITHUB_STEP_SUMMARY
           echo "- **Target**: v${{ steps.version.outputs.target }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Expected conflicts**: $CONFLICTS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Expected conflicts**: ${CONFLICTS:-0}" >> $GITHUB_STEP_SUMMARY
+          set -e
 
       - name: Attempt merge
         id: result
