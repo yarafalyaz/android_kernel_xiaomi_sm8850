@@ -8,7 +8,7 @@
 
 #include <trace/hooks/sched.h>
 
-#define IOWAIT_BOOST_MIN	(SCHED_CAPACITY_SCALE / 8)
+#define IOWAIT_BOOST_MIN	(SCHED_CAPACITY_SCALE / 16)
 
 struct sugov_tunables {
 	struct gov_attr_set	attr_set;
@@ -142,10 +142,10 @@ unsigned long get_capacity_ref_freq(struct cpufreq_policy *policy)
 		return policy->cpuinfo.max_freq;
 
 	/*
-	 * Apply a 25% margin so that we select a higher frequency than
+	 * Apply a 33% margin so that we select a higher frequency than
 	 * the current one before the CPU is fully busy:
 	 */
-	return policy->cur + (policy->cur >> 2);
+	return policy->cur + (policy->cur >> 1) - (policy->cur >> 3);
 }
 
 /**
@@ -786,7 +786,7 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->rate_limit_us = cpufreq_policy_transition_delay_us(policy);
+	tunables->rate_limit_us = max(cpufreq_policy_transition_delay_us(policy), 20000u);
 
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
