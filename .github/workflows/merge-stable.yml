@@ -1,0 +1,100 @@
+name: Merge Linux Stable
+on:
+  workflow_dispatch:
+    inputs:
+      target_version:
+        description: 'Target kernel version (e.g. 6.12.38)'
+        required: true
+        default: '6.12.38'
+  schedule:
+    - cron: '0 12 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: resukisu
+          fetch-depth: 0
+          token: ${{ secrets.CI_TOKEN }}
+
+      - name: Determine target version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TARGET="${{ inputs.target_version }}"
+          else
+            BASE=$(grep "^SUBLEVEL = " Makefile | awk '{print $3}')
+            NEXT=$((BASE + 1))
+            TARGET="6.12.$NEXT"
+          fi
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo ">> Target: v$TARGET"
+
+      - name: Check if already merged
+        id: check
+        run: |
+          if git tag -l "v${{ steps.version.outputs.target }}" | grep -q .; then
+            echo "done=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "done=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure Git
+        if: steps.check.outputs.done == 'no'
+        run: |
+          git config --global user.name "Nezha CI"
+          git config --global user.email "ci@nezha.dev"
+
+      - name: Fetch stable tag
+        if: steps.check.outputs.done == 'no'
+        run: |
+          git fetch --depth=1 https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git "refs/tags/v${{ steps.version.outputs.target }}:refs/tags/v${{ steps.version.outputs.target }}"
+
+      - name: Report conflict count
+        if: steps.check.outputs.done == 'no'
+        run: |
+          BASE=$(git merge-base HEAD "v${{ steps.version.outputs.target }}")
+          CONFLICTS=$(git merge-tree "$BASE" HEAD "v${{ steps.version.outputs.target }}" 2>/dev/null | grep -c "^<<<<<<<" || echo 0)
+          echo "Conflicts expected: $CONFLICTS"
+          echo "## Pre-merge conflict check" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target**: v${{ steps.version.outputs.target }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Expected conflicts**: $CONFLICTS" >> $GITHUB_STEP_SUMMARY
+
+      - name: Attempt merge
+        id: result
+        if: steps.check.outputs.done == 'no'
+        run: |
+          if git merge --no-edit "v${{ steps.version.outputs.target }}" 2>&1 | tee /tmp/merge_log; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+          else
+            CONFLICT_FILES=$(git diff --name-only --diff-filter=U | tr '\n' ' ')
+            echo "status=conflict" >> "$GITHUB_OUTPUT"
+            echo "files=$CONFLICT_FILES" >> "$GITHUB_OUTPUT"
+            echo ""
+            echo "## ⚠️ CONFLICT FILES" >> $GITHUB_STEP_SUMMARY
+            for f in $CONFLICT_FILES; do
+              echo "- \`$f\`" >> $GITHUB_STEP_SUMMARY
+            done
+            git merge --abort
+            exit 0
+          fi
+
+      - name: Push clean merge
+        if: steps.result.outputs.status == 'clean'
+        run: |
+          echo "## ✅ CLEAN MERGE" >> $GITHUB_STEP_SUMMARY
+          echo "Pushing v${{ steps.version.outputs.target }} to resukisu" >> $GITHUB_STEP_SUMMARY
+          git tag "v${{ steps.version.outputs.target }}"
+          git push origin resukisu
+          git push origin "v${{ steps.version.outputs.target }}"
+
+      - name: Cleanup
+        if: steps.result.outputs.status == 'conflict'
+        run: |
+          echo "## ⚠️ MANUAL RESOLUTION NEEDED" >> $GITHUB_STEP_SUMMARY
+          echo "Run workflow manually with: \`git merge v${{ steps.version.outputs.target }}\`" >> $GITHUB_STEP_SUMMARY
