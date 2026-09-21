@@ -1,7 +1,7 @@
 name: Trigger Central Build
 on:
   push:
-    branches: [ main, resukisu, mksu, ksu ]
+    branches: [ main ]
 jobs:
   trigger:
     runs-on: ubuntu-latest
@@ -16,5 +16,8 @@ jobs:
           client-payload: >-
             {
               "project": "nezha_sm8850",
-              "branch": "${{ github.ref_name }}"
+              "branch": "${{ github.ref_name }}",
+              "apply_bbg": false,
+              "apply_susfs": true,
+              "apply_hybridmount": true
             }
